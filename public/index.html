@@ -15,6 +15,7 @@
       background-color: #222;
       color: #eee;
       transition: background-color 0.3s;
+      position: relative;
     }
 
     #box {
@@ -53,9 +54,54 @@
     .flash-green { background-color: #264d26; }
     .flash-red { background-color: #4d2626; }
     .flash-blue { background-color: #26324d; }
+
+    #helpContainer {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+    }
+
+    #helpBtn {
+      background: transparent;
+      border: 1px solid #eee;
+      color: #eee;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 24px;
+      text-align: center;
+    }
+
+    #helpMenu {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: 40px;
+      background-color: #333;
+      border: 1px solid #444;
+      padding: 10px;
+      border-radius: 4px;
+      width: 200px;
+      font-size: 0.9em;
+      text-align: left;
+    }
+
+    #helpMenu.show { display: block; }
   </style>
 </head>
   <body>
+    <div id="helpContainer">
+      <button id="helpBtn">?</button>
+      <div id="helpMenu">
+        <div><b>Mute 15m (↑)</b> - mute user for 15 minutes</div>
+        <div><b>Unsafe (←)</b> - delete and mark message unsafe</div>
+        <div><b>Safe (→)</b> - mark message as safe</div>
+        <div><b>Mute 5m (↓)</b> - mute user for 5 minutes</div>
+        <div><b>Jump to Present</b> - skip to most recent message</div>
+      </div>
+    </div>
     <div id="box">
       <div id="author">
         <img id="avatar" src="" alt="avatar">
@@ -156,6 +202,9 @@
       document.getElementById('muteBtn').onclick = () => sendLabel('mute');
       document.getElementById('mute15Btn').onclick = () => sendLabel('mute15');
       document.getElementById('jumpBtn').onclick = () => jumpToPresent();
+      document.getElementById('helpBtn').onclick = () => {
+        document.getElementById('helpMenu').classList.toggle('show');
+      };
       document.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowLeft') sendLabel('unsafe');
         if (e.key === 'ArrowRight') sendLabel('safe');
