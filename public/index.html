@@ -26,6 +26,8 @@
     }
 
     #controls { margin-top: 20px; }
+    #controls > div { margin-top: 5px; }
+    #controls > div { display: flex; justify-content: center; }
 
     .flash-green { background-color: #cfc; }
     .flash-red { background-color: #fcc; }
@@ -35,9 +37,14 @@
   <body>
     <div id="box"><div id="content">Loading...</div></div>
     <div id="controls">
-      <button id="unsafeBtn">Unsafe (←)</button>
-      <button id="safeBtn">Safe (→)</button>
-      <button id="muteBtn">Mute 5m (↓)</button>
+      <div><button id="mute15Btn">Mute 15m (↑)</button></div>
+      <div>
+        <button id="unsafeBtn">Unsafe (←)</button>
+        <span style="display:inline-block;width:60px"></span>
+        <button id="safeBtn">Safe (→)</button>
+      </div>
+      <div><button id="muteBtn">Mute 5m (↓)</button></div>
+      <div style="margin-top:10px"><button id="jumpBtn">Jump to Present</button></div>
     </div>
     <script>
       let current = null;
@@ -79,7 +86,7 @@
         const body = document.body;
         const dir = label === 'safe' ? 'right' : 'left';
         box.style.transform = `translateX(${dir === 'right' ? '100vw' : '-100vw'})`;
-        const flash = label === 'safe' ? 'flash-green' : (label === 'mute' ? 'flash-blue' : 'flash-red');
+        const flash = label === 'safe' ? 'flash-green' : (label === 'mute' || label === 'mute15' ? 'flash-blue' : 'flash-red');
         body.classList.add(flash);
         setTimeout(() => {
           body.classList.remove('flash-green');
@@ -90,13 +97,27 @@
         setTimeout(() => getNext(dir), 300);
       }
 
+      async function jumpToPresent() {
+        const res = await fetch('/jump', { method: 'POST' });
+        if (!res.ok) {
+          document.getElementById('content').textContent = 'No messages';
+          current = null;
+          return;
+        }
+        current = await res.json();
+        document.getElementById('content').textContent = current.content || '[no content]';
+      }
+
       document.getElementById('unsafeBtn').onclick = () => sendLabel('unsafe');
       document.getElementById('safeBtn').onclick = () => sendLabel('safe');
       document.getElementById('muteBtn').onclick = () => sendLabel('mute');
+      document.getElementById('mute15Btn').onclick = () => sendLabel('mute15');
+      document.getElementById('jumpBtn').onclick = () => jumpToPresent();
       document.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowLeft') sendLabel('unsafe');
         if (e.key === 'ArrowRight') sendLabel('safe');
         if (e.key === 'ArrowDown') sendLabel('mute');
+        if (e.key === 'ArrowUp') sendLabel('mute15');
       });
       getNext();
     </script>
