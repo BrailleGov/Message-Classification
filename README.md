@@ -16,6 +16,6 @@ This prototype collects Discord messages and lets you label them as `safe` or `u
    ```bash
    npm run bot
    ```
-5. Open [http://localhost:3000](http://localhost:3000) to label messages using the left (unsafe) and right (safe) arrow keys.
+5. Open [http://localhost:3000](http://localhost:3000) to label messages using the left (unsafe) and right (safe) arrow keys. The page will automatically poll for new messages when none are available.
 
 Messages and labels are stored in `data.json`.

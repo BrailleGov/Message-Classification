@@ -4,33 +4,93 @@
   <meta charset="UTF-8">
   <title>Message Labeler</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 40px; }
-    #content { font-size: 1.5em; margin-bottom: 20px; }
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 80px;
+      transition: background-color 0.5s;
+    }
+    #box {
+      border: 1px solid #ccc;
+      padding: 40px;
+      min-width: 300px;
+      min-height: 150px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      font-size: 1.5em;
+    }
+    #controls {
+      margin-top: 20px;
+    }
+    .fade-safe { animation: fadeGreen 0.5s; }
+    .fade-unsafe { animation: fadeRed 0.5s; }
+    @keyframes fadeGreen {
+      from { background-color: #d4ffd4; }
+      to { background-color: white; }
+    }
+    @keyframes fadeRed {
+      from { background-color: #ffd4d4; }
+      to { background-color: white; }
+    }
+    .slide-right { animation: slideRight 0.3s forwards; }
+    .slide-left { animation: slideLeft 0.3s forwards; }
+    @keyframes slideRight {
+      from { transform: translateX(0); }
+      to { transform: translateX(100%); opacity: 0; }
+    }
+    @keyframes slideLeft {
+      from { transform: translateX(0); }
+      to { transform: translateX(-100%); opacity: 0; }
+    }
   </style>
 </head>
 <body>
-  <div id="content">Loading...</div>
+  <div id="box"><span id="content">Loading...</span></div>
+  <div id="controls">Use ← for "unsafe" and → for "safe"</div>
   <script>
     let current = null;
+    let pollHandle = null;
+
     async function getNext() {
+      clearTimeout(pollHandle);
       try {
         const res = await fetch('/next');
-        if (!res.ok) { document.getElementById('content').textContent = 'No more messages'; return; }
+        if (!res.ok) {
+          document.getElementById('content').textContent = 'No more messages';
+          pollHandle = setTimeout(getNext, 3000);
+          return;
+        }
         current = await res.json();
         document.getElementById('content').textContent = current.content || '[no content]';
       } catch (e) {
         console.error(e);
+        pollHandle = setTimeout(getNext, 3000);
       }
     }
+
     async function sendLabel(label) {
       if (!current) return;
+      const box = document.getElementById('box');
+      box.classList.add(label === 'safe' ? 'slide-right' : 'slide-left');
+      document.body.classList.add(label === 'safe' ? 'fade-safe' : 'fade-unsafe');
+
       await fetch('/label', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: current.id, label })
       });
+
       current = null;
-      getNext();
+      setTimeout(() => {
+        box.classList.remove('slide-right', 'slide-left');
+        document.body.classList.remove('fade-safe', 'fade-unsafe');
+        document.getElementById('content').textContent = '';
+        getNext();
+      }, 300);
     }
     document.addEventListener('keydown', (e) => {
       if (e.key === 'ArrowLeft') sendLabel('unsafe');
