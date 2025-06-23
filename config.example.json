@@ -1,5 +1,6 @@
 {
   "BOT_TOKEN": "your-discord-bot-token",
   "CHANNEL_ID": "channel-id-to-listen",
-  "SERVER_BASE_URL": "http://localhost:3000"
+  "SERVER_BASE_URL": "http://localhost:3000",
+  "GUILD_ID": "your-guild-id"
 }

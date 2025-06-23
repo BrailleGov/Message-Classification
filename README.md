@@ -7,7 +7,7 @@ This prototype collects Discord messages and lets you label them as `safe` or `u
    ```bash
    npm install
    ```
-2. Copy `config.example.json` to `config.json` and fill in your Discord bot token and channel ID.
+2. Copy `config.example.json` to `config.json` and fill in your Discord bot token, channel ID and guild ID.
 3. Start the web server:
    ```bash
    npm run server
@@ -16,6 +16,6 @@ This prototype collects Discord messages and lets you label them as `safe` or `u
    ```bash
    npm run bot
    ```
-5. Open [http://localhost:3000](http://localhost:3000) to label messages using the left (unsafe) and right (safe) arrow keys.
+5. Open [http://localhost:3000](http://localhost:3000) to label messages using the left (unsafe), right (safe) and down (mute 5m) arrow keys.
 
 Messages and labels are stored in `data.json`.
