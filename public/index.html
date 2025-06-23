@@ -4,39 +4,95 @@
   <meta charset="UTF-8">
   <title>Message Labeler</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 40px; }
-    #content { font-size: 1.5em; margin-bottom: 20px; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.3s;
+    }
+
+    #box {
+      border: 1px solid #ccc;
+      padding: 20px;
+      border-radius: 8px;
+      min-width: 300px;
+      text-align: center;
+      font-size: 1.5em;
+      transition: transform 0.3s;
+    }
+
+    #controls { margin-top: 20px; }
+
+    .flash-green { background-color: #cfc; }
+    .flash-red { background-color: #fcc; }
   </style>
 </head>
-<body>
-  <div id="content">Loading...</div>
-  <script>
-    let current = null;
-    async function getNext() {
-      try {
-        const res = await fetch('/next');
-        if (!res.ok) { document.getElementById('content').textContent = 'No more messages'; return; }
-        current = await res.json();
-        document.getElementById('content').textContent = current.content || '[no content]';
-      } catch (e) {
-        console.error(e);
+  <body>
+    <div id="box"><div id="content">Loading...</div></div>
+    <div id="controls">
+      <button id="unsafeBtn">Unsafe (←)</button>
+      <button id="safeBtn">Safe (→)</button>
+    </div>
+    <script>
+      let current = null;
+      let poll = null;
+
+      async function getNext(enterDir) {
+        if (poll) { clearTimeout(poll); poll = null; }
+        try {
+          const res = await fetch('/next');
+          if (!res.ok) {
+            document.getElementById('content').textContent = 'No more messages';
+            current = null;
+            poll = setTimeout(() => getNext(enterDir), 3000);
+            return;
+          }
+          current = await res.json();
+          const box = document.getElementById('box');
+          box.style.transition = 'none';
+          if (enterDir) {
+            box.style.transform = `translateX(${enterDir === 'right' ? '-100vw' : '100vw'})`;
+          }
+          void box.offsetWidth;
+          box.style.transition = 'transform 0.3s';
+          document.getElementById('content').textContent = current.content || '[no content]';
+          box.style.transform = 'translateX(0)';
+        } catch (e) {
+          console.error(e);
+        }
       }
-    }
-    async function sendLabel(label) {
-      if (!current) return;
-      await fetch('/label', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: current.id, label })
+
+      async function sendLabel(label) {
+        if (!current) return;
+        await fetch('/label', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: current.id, label })
+        });
+        const box = document.getElementById('box');
+        const body = document.body;
+        const dir = label === 'safe' ? 'right' : 'left';
+        box.style.transform = `translateX(${dir === 'right' ? '100vw' : '-100vw'})`;
+        body.classList.add(label === 'safe' ? 'flash-green' : 'flash-red');
+        setTimeout(() => {
+          body.classList.remove('flash-green');
+          body.classList.remove('flash-red');
+        }, 300);
+        current = null;
+        setTimeout(() => getNext(dir), 300);
+      }
+
+      document.getElementById('unsafeBtn').onclick = () => sendLabel('unsafe');
+      document.getElementById('safeBtn').onclick = () => sendLabel('safe');
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') sendLabel('unsafe');
+        if (e.key === 'ArrowRight') sendLabel('safe');
       });
-      current = null;
       getNext();
-    }
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowLeft') sendLabel('unsafe');
-      if (e.key === 'ArrowRight') sendLabel('safe');
-    });
-    getNext();
-  </script>
+    </script>
 </body>
 </html>
