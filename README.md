@@ -16,6 +16,11 @@ This prototype collects Discord messages and lets you label them as `safe` or `u
    ```bash
    npm run bot
    ```
-5. Open [http://localhost:3000](http://localhost:3000) to label messages using the left (unsafe), right (safe) and down (mute 5m) arrow keys.
+5. Open [http://localhost:3000](http://localhost:3000) to label messages using the arrow keys:
+   - Left arrow: mark unsafe and delete the message.
+   - Right arrow: mark safe.
+   - Down arrow: mute 5 minutes and delete the message.
+   - Up arrow: mute 15 minutes and delete the message.
+   - Use the "Jump to Present" button to skip to the latest message.
 
 Messages and labels are stored in `data.json`.

@@ -86,6 +86,24 @@ app.get('/next', (req, res) => {
   res.json({ id: item.id, content: item.content });
 });
 
+app.post('/jump', (req, res) => {
+  let last = null;
+  for (let i = queue.length - 1; i >= 0; i--) {
+    if (!queue[i].label) {
+      last = queue[i];
+      break;
+    }
+  }
+  if (!last) return res.status(404).end();
+  queue = queue.filter(item => item.label || item === last);
+  try {
+    saveData(queue);
+  } catch (e) {
+    console.error('Failed to save data:', e);
+  }
+  res.json({ id: last.id, content: last.content });
+});
+
 async function deleteMessage(id) {
   try {
     const res = await fetch(`https://discord.com/api/channels/${CHANNEL_ID}/messages/${id}`, {
@@ -126,17 +144,21 @@ app.post('/label', async (req, res) => {
   if (item.label) return res.status(200).json({ status: 'already labeled' });
 
   const action = label;
-  const storedLabel = label === 'mute' ? 'unsafe' : label;
+  const isMute = label === 'mute' || label === 'mute15';
+  const storedLabel = isMute ? 'unsafe' : label;
   item.label = storedLabel;
   queue.forEach(m => {
     if (m !== item && m.content === item.content) m.label = storedLabel;
   });
 
-  if ((action === 'unsafe' || action === 'mute') && item.sourceId) {
+  if ((action === 'unsafe' || isMute) && item.sourceId) {
     await deleteMessage(item.sourceId);
   }
   if (action === 'mute' && item.authorId) {
     await muteMember(item.authorId, 5 * 60 * 1000);
+  }
+  if (action === 'mute15' && item.authorId) {
+    await muteMember(item.authorId, 15 * 60 * 1000);
   }
 
   try {
