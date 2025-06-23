@@ -12,30 +12,61 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      background-color: #222;
+      color: #eee;
       transition: background-color 0.3s;
     }
 
     #box {
-      border: 1px solid #ccc;
+      border: 1px solid #444;
       padding: 20px;
       border-radius: 8px;
       min-width: 300px;
       text-align: center;
       font-size: 1.5em;
+      background-color: #333;
       transition: transform 0.3s;
+    }
+
+    #author {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    #author img {
+      width: 48px;
+      height: 48px;
+      border-radius: 24px;
+      margin-right: 10px;
+    }
+
+    #roles {
+      font-size: 0.7em;
+      color: #aaa;
     }
 
     #controls { margin-top: 20px; }
     #controls > div { margin-top: 5px; }
     #controls > div { display: flex; justify-content: center; }
 
-    .flash-green { background-color: #cfc; }
-    .flash-red { background-color: #fcc; }
-    .flash-blue { background-color: #ccf; }
+    .flash-green { background-color: #264d26; }
+    .flash-red { background-color: #4d2626; }
+    .flash-blue { background-color: #26324d; }
   </style>
 </head>
   <body>
-    <div id="box"><div id="content">Loading...</div></div>
+    <div id="box">
+      <div id="author">
+        <img id="avatar" src="" alt="avatar">
+        <div>
+          <div id="username"></div>
+          <div id="displayName" style="font-size:0.9em;color:#bbb"></div>
+          <div id="roles"></div>
+        </div>
+      </div>
+      <div id="content">Loading...</div>
+    </div>
     <div id="controls">
       <div><button id="mute15Btn">Mute 15m (↑)</button></div>
       <div>
@@ -56,6 +87,10 @@
           const res = await fetch('/next');
           if (!res.ok) {
             document.getElementById('content').textContent = 'Waiting for more messages...';
+            document.getElementById('username').textContent = '';
+            document.getElementById('displayName').textContent = '';
+            document.getElementById('roles').textContent = '';
+            document.getElementById('avatar').src = '';
             current = null;
             poll = setTimeout(() => getNext(enterDir), 3000);
             return;
@@ -69,6 +104,10 @@
           void box.offsetWidth;
           box.style.transition = 'transform 0.3s';
           document.getElementById('content').textContent = current.content || '[no content]';
+          document.getElementById('username').textContent = current.username || '';
+          document.getElementById('displayName').textContent = current.displayName || '';
+          document.getElementById('roles').textContent = (current.roles && current.roles.length) ? current.roles.join(', ') : '';
+          document.getElementById('avatar').src = current.avatar || '';
           box.style.transform = 'translateX(0)';
         } catch (e) {
           console.error(e);
@@ -106,6 +145,10 @@
         }
         current = await res.json();
         document.getElementById('content').textContent = current.content || '[no content]';
+        document.getElementById('username').textContent = current.username || '';
+        document.getElementById('displayName').textContent = current.displayName || '';
+        document.getElementById('roles').textContent = (current.roles && current.roles.length) ? current.roles.join(', ') : '';
+        document.getElementById('avatar').src = current.avatar || '';
       }
 
       document.getElementById('unsafeBtn').onclick = () => sendLabel('unsafe');

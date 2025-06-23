@@ -31,7 +31,11 @@ client.on('messageCreate', async (msg) => {
     id: msg.id,
     content: msg.content,
     timestamp: msg.createdAt.toISOString(),
-    authorId: msg.author.id
+    authorId: msg.author.id,
+    username: msg.author.username,
+    displayName: msg.member ? msg.member.displayName : msg.author.username,
+    avatar: msg.author.displayAvatarURL({ extension: 'png', size: 64 }),
+    roles: msg.member ? msg.member.roles.cache.filter(r => r.name !== '@everyone').map(r => r.name) : []
   };
   await postQueue(payload);
 });
