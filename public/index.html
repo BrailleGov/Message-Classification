@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Message Labeler</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    #content { font-size: 1.5em; margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+  <div id="content">Loading...</div>
+  <script>
+    let current = null;
+    async function getNext() {
+      try {
+        const res = await fetch('/next');
+        if (!res.ok) { document.getElementById('content').textContent = 'No more messages'; return; }
+        current = await res.json();
+        document.getElementById('content').textContent = current.content || '[no content]';
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    async function sendLabel(label) {
+      if (!current) return;
+      await fetch('/label', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: current.id, label })
+      });
+      current = null;
+      getNext();
+    }
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') sendLabel('unsafe');
+      if (e.key === 'ArrowRight') sendLabel('safe');
+    });
+    getNext();
+  </script>
+</body>
+</html>

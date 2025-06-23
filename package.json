@@ -1,0 +1,19 @@
+{
+  "name": "message-classification",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "server": "node server.js",
+    "bot": "node bot.js",
+    "test": "node server.js & sleep 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "discord.js": "^14.20.0",
+    "express": "^5.1.0"
+  }
+}
