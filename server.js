@@ -20,6 +20,7 @@ function loadData() {
       id: id++,
       content: item.content,
       label: item.label,
+      displayed: false,
       sourceId: item.sourceId,
       timestamp: item.timestamp,
       authorId: item.authorId,
@@ -64,7 +65,7 @@ app.post('/queue', (req, res) => {
   const existing = queue.find(m => m.label && m.content === content);
   if (existing) label = existing.label;
 
-  const item = { id: nextId++, sourceId, content, timestamp, authorId, username, displayName, avatar, roles };
+  const item = { id: nextId++, sourceId, content, timestamp, authorId, username, displayName, avatar, roles, displayed: false };
   if (label) item.label = label;
   queue.push(item);
   try {
@@ -77,12 +78,13 @@ app.post('/queue', (req, res) => {
 
 function getNextItem() {
   for (const item of queue) {
-    if (item.label) continue;
+    if (item.label || item.displayed) continue;
     const dup = queue.find(m => m.label && m.content === item.content);
     if (dup) {
       item.label = dup.label;
       continue;
     }
+    item.displayed = true;
     return item;
   }
   return null;
@@ -111,6 +113,7 @@ app.post('/jump', (req, res) => {
   }
   if (!last) return res.status(404).end();
   queue = queue.filter(item => item.label || item === last);
+  last.displayed = true;
   try {
     saveData(queue);
   } catch (e) {
@@ -169,6 +172,7 @@ app.post('/label', async (req, res) => {
   const isMute = label === 'mute' || label === 'mute15';
   const storedLabel = isMute ? 'unsafe' : label;
   item.label = storedLabel;
+  item.displayed = false;
   queue.forEach(m => {
     if (m !== item && m.content === item.content) m.label = storedLabel;
   });
