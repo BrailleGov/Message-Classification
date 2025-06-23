@@ -45,6 +45,8 @@
     #roles {
       font-size: 0.7em;
       color: #aaa;
+      white-space: normal;
+      word-break: break-word;
     }
 
     #controls { margin-top: 20px; }
@@ -89,16 +91,59 @@
     }
 
     #helpMenu.show { display: block; }
+
+    #settingsContainer {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+    }
+
+    #settingsBtn {
+      background: transparent;
+      border: 1px solid #eee;
+      color: #eee;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 24px;
+      text-align: center;
+    }
+
+    #settingsMenu {
+      display: none;
+      position: absolute;
+      left: 0;
+      top: 40px;
+      background-color: #333;
+      border: 1px solid #444;
+      padding: 10px;
+      border-radius: 4px;
+      width: 220px;
+      font-size: 0.9em;
+      text-align: left;
+    }
+
+    #settingsMenu.show { display: block; }
+    #settingsMenu div { margin-bottom: 8px; }
   </style>
 </head>
   <body>
+    <div id="settingsContainer">
+      <button id="settingsBtn">⚙</button>
+      <div id="settingsMenu">
+        <div>Down Arrow: <span id="downValue"></span>m<br><input type="range" id="downSlider" min="5" max="30"></div>
+        <div>Up Arrow: <span id="upValue"></span>m<br><input type="range" id="upSlider" min="5" max="30"></div>
+      </div>
+    </div>
     <div id="helpContainer">
       <button id="helpBtn">?</button>
       <div id="helpMenu">
         <div><b>Unsafe (←)</b> - delete and mark message unsafe</div>
         <div><b>Safe (→)</b> - mark message as safe</div>
-        <div><b>Mute 5m (↓)</b> - mute user for 5 minutes and delete the message</div>
-        <div><b>Mute 15m (↑)</b> - mute user for 15 minutes and delete the message</div>
+        <div class="downHelp"><b>Mute 5m (↓)</b> - mute user for 5 minutes and delete the message</div>
+        <div class="upHelp"><b>Mute 15m (↑)</b> - mute user for 15 minutes and delete the message</div>
         <div><b>Jump to Present</b> - skip to most recent message</div>
       </div>
     </div>
@@ -126,6 +171,38 @@
     <script>
       let current = null;
       let poll = null;
+
+      const DEFAULT_DOWN = 5;
+      const DEFAULT_UP = 15;
+      let downDuration = parseInt(localStorage.getItem('downDuration')) || DEFAULT_DOWN;
+      let upDuration = parseInt(localStorage.getItem('upDuration')) || DEFAULT_UP;
+
+      function updateDurationUI() {
+        document.getElementById('downSlider').value = downDuration;
+        document.getElementById('upSlider').value = upDuration;
+        document.getElementById('downValue').textContent = downDuration;
+        document.getElementById('upValue').textContent = upDuration;
+        document.getElementById('muteBtn').textContent = `Mute ${downDuration}m (↓)`;
+        document.getElementById('mute15Btn').textContent = `Mute ${upDuration}m (↑)`;
+        document.querySelector('#helpMenu .downHelp').innerHTML = `<b>Mute ${downDuration}m (↓)</b> - mute user for ${downDuration} minutes and delete the message`;
+        document.querySelector('#helpMenu .upHelp').innerHTML = `<b>Mute ${upDuration}m (↑)</b> - mute user for ${upDuration} minutes and delete the message`;
+      }
+
+      document.getElementById('downSlider').addEventListener('input', (e) => {
+        downDuration = parseInt(e.target.value);
+        localStorage.setItem('downDuration', downDuration);
+        updateDurationUI();
+      });
+
+      document.getElementById('upSlider').addEventListener('input', (e) => {
+        upDuration = parseInt(e.target.value);
+        localStorage.setItem('upDuration', upDuration);
+        updateDurationUI();
+      });
+
+      document.getElementById('settingsBtn').onclick = () => {
+        document.getElementById('settingsMenu').classList.toggle('show');
+      };
 
       async function getNext(enterDir) {
         if (poll) { clearTimeout(poll); poll = null; }
@@ -160,12 +237,14 @@
         }
       }
 
-      async function sendLabel(label) {
+      async function sendLabel(label, minutes) {
         if (!current) return;
+        const payload = { id: current.id, label };
+        if (minutes) payload.duration = minutes;
         await fetch('/label', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: current.id, label })
+          body: JSON.stringify(payload)
         });
         const box = document.getElementById('box');
         const body = document.body;
@@ -199,8 +278,8 @@
 
       document.getElementById('unsafeBtn').onclick = () => sendLabel('unsafe');
       document.getElementById('safeBtn').onclick = () => sendLabel('safe');
-      document.getElementById('muteBtn').onclick = () => sendLabel('mute');
-      document.getElementById('mute15Btn').onclick = () => sendLabel('mute15');
+      document.getElementById('muteBtn').onclick = () => sendLabel('mute', downDuration);
+      document.getElementById('mute15Btn').onclick = () => sendLabel('mute15', upDuration);
       document.getElementById('jumpBtn').onclick = () => jumpToPresent();
       document.getElementById('helpBtn').onclick = () => {
         document.getElementById('helpMenu').classList.toggle('show');
@@ -208,9 +287,10 @@
       document.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowLeft') sendLabel('unsafe');
         if (e.key === 'ArrowRight') sendLabel('safe');
-        if (e.key === 'ArrowDown') sendLabel('mute');
-        if (e.key === 'ArrowUp') sendLabel('mute15');
+        if (e.key === 'ArrowDown') sendLabel('mute', downDuration);
+        if (e.key === 'ArrowUp') sendLabel('mute15', upDuration);
       });
+      updateDurationUI();
       getNext();
     </script>
 </body>

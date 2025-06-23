@@ -160,7 +160,7 @@ async function muteMember(userId, durationMs) {
 }
 
 app.post('/label', async (req, res) => {
-  const { id, label } = req.body || {};
+  const { id, label, duration } = req.body || {};
   const item = queue.find(m => m.id === id);
   if (!item) return res.status(404).json({ error: 'not found' });
   if (item.label) return res.status(200).json({ status: 'already labeled' });
@@ -176,11 +176,14 @@ app.post('/label', async (req, res) => {
   if ((action === 'unsafe' || isMute) && item.sourceId) {
     await deleteMessage(item.sourceId);
   }
+  const durMin = typeof duration === 'number' ? Math.min(30, Math.max(5, duration)) : null;
   if (action === 'mute' && item.authorId) {
-    await muteMember(item.authorId, 5 * 60 * 1000);
+    const minutes = durMin ?? 5;
+    await muteMember(item.authorId, minutes * 60 * 1000);
   }
   if (action === 'mute15' && item.authorId) {
-    await muteMember(item.authorId, 15 * 60 * 1000);
+    const minutes = durMin ?? 15;
+    await muteMember(item.authorId, minutes * 60 * 1000);
   }
 
   try {
