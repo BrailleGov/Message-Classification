@@ -19,7 +19,7 @@
     }
     .no-anim *, .no-anim { transition: none !important; animation: none !important; }
 
-    #box {
+    .tab {
       border: 1px solid #444;
       padding: 20px;
       border-radius: 8px;
@@ -28,31 +28,42 @@
       font-size: 1.5em;
       background-color: #333;
       transition: transform 0.3s;
+      margin-bottom: 10px;
     }
 
-    #author {
+    .tab .author {
       display: flex;
       align-items: center;
       margin-bottom: 10px;
     }
 
-    #author img {
+    .tab .author img {
       width: 48px;
       height: 48px;
       border-radius: 24px;
       margin-right: 10px;
     }
 
-    #roles {
+    .tab .roles {
       font-size: 0.7em;
       color: #aaa;
       white-space: normal;
       word-break: break-word;
     }
 
-    #controls { margin-top: 20px; }
+    #controls { position: fixed; bottom: 0; width: 100%; padding-bottom: 10px; background-color: #222; }
     #controls > div { margin-top: 5px; }
+    #controls { display:flex; flex-direction:column; align-items:center; }
     #controls > div { display: flex; justify-content: center; }
+
+    #tabs {
+      position: fixed;
+      bottom: 120px;
+      width: 100%;
+      display: flex;
+      flex-direction: column-reverse;
+      align-items: center;
+    }
 
     .flash-green { background-color: #264d26; }
     .flash-red { background-color: #4d2626; }
@@ -149,17 +160,7 @@
         <div><b>Jump to Present</b> - skip to most recent message</div>
       </div>
     </div>
-    <div id="box">
-      <div id="author">
-        <img id="avatar" src="" alt="avatar">
-        <div>
-          <div id="username"></div>
-          <div id="displayName" style="font-size:0.9em;color:#bbb"></div>
-          <div id="roles"></div>
-        </div>
-      </div>
-      <div id="content">Loading...</div>
-    </div>
+    <div id="tabs"></div>
     <div id="controls">
       <div><button id="mute15Btn">Mute 15m (↑)</button></div>
       <div>
@@ -171,20 +172,21 @@
       <div style="margin-top:10px"><button id="jumpBtn">Jump to Present</button></div>
     </div>
     <script>
-      let current = null;
+      let queue = [];
       let poll = null;
 
       const DEFAULT_DOWN = 5;
       const DEFAULT_UP = 15;
+      const MAX_VISIBLE = 6;
       let downDuration = parseInt(localStorage.getItem('downDuration')) || DEFAULT_DOWN;
       let upDuration = parseInt(localStorage.getItem('upDuration')) || DEFAULT_UP;
 
-        let animationsEnabled = localStorage.getItem("animationsEnabled");
-        animationsEnabled = animationsEnabled === null ? true : animationsEnabled === "true";
-        function applyAnimationSetting() {
-          document.getElementById("animToggle").checked = animationsEnabled;
-          document.body.classList.toggle("no-anim", !animationsEnabled);
-        }
+      let animationsEnabled = localStorage.getItem('animationsEnabled');
+      animationsEnabled = animationsEnabled === null ? true : animationsEnabled === 'true';
+      function applyAnimationSetting() {
+        document.getElementById('animToggle').checked = animationsEnabled;
+        document.body.classList.toggle('no-anim', !animationsEnabled);
+      }
       function updateDurationUI() {
         document.getElementById('downSlider').value = downDuration;
         document.getElementById('upSlider').value = upDuration;
@@ -207,63 +209,72 @@
         localStorage.setItem('upDuration', upDuration);
         updateDurationUI();
       });
-        document.getElementById("animToggle").addEventListener("change", (e) => {
-          animationsEnabled = e.target.checked;
-          localStorage.setItem("animationsEnabled", animationsEnabled);
-          applyAnimationSetting();
-        });
+      document.getElementById('animToggle').addEventListener('change', (e) => {
+        animationsEnabled = e.target.checked;
+        localStorage.setItem('animationsEnabled', animationsEnabled);
+        applyAnimationSetting();
+      });
 
       document.getElementById('settingsBtn').onclick = () => {
         document.getElementById('settingsMenu').classList.toggle('show');
       };
 
-      async function getNext(enterDir) {
-        if (poll) { clearTimeout(poll); poll = null; }
+      async function fetchMessage() {
         try {
           const res = await fetch('/next');
-          if (!res.ok) {
-            document.getElementById('content').textContent = 'Waiting for more messages...';
-            document.getElementById('username').textContent = '';
-            document.getElementById('displayName').textContent = '';
-            document.getElementById('roles').textContent = '';
-            document.getElementById('avatar').src = '';
-            current = null;
-            poll = setTimeout(() => getNext(enterDir), 3000);
-            return;
-          }
-          current = await res.json();
-          const box = document.getElementById('box');
-            const anim = animationsEnabled;
-            box.style.transition = anim ? "transform 0.3s" : "none";
-            if (anim && enterDir) {
-              box.style.transform = `translateX(${enterDir === "right" ? "-100vw" : "100vw"})`;
-              void box.offsetWidth;
-            }
-          document.getElementById('content').textContent = current.content || '[no content]';
-          document.getElementById('username').textContent = current.username || '';
-          document.getElementById('displayName').textContent = current.displayName || '';
-          document.getElementById('roles').textContent = (current.roles && current.roles.length) ? current.roles.join(', ') : '';
-          document.getElementById('avatar').src = current.avatar || '';
-          box.style.transform = 'translateX(0)';
+          if (!res.ok) return null;
+          return await res.json();
         } catch (e) {
           console.error(e);
+          return null;
         }
       }
 
+      function createTab(msg) {
+        const div = document.createElement('div');
+        div.className = 'tab';
+        div.innerHTML = `<div class="author"><img src="${msg.avatar || ''}" alt="avatar"><div><div class="username">${msg.username || ''}</div><div class="displayName" style="font-size:0.9em;color:#bbb">${msg.displayName || ''}</div><div class="roles">${msg.roles && msg.roles.length ? msg.roles.join(', ') : ''}</div></div></div><div class="content">${msg.content || '[no content]'}</div>`;
+        div.style.transition = animationsEnabled ? 'transform 0.3s' : 'none';
+        return div;
+      }
+
+      function addTab(msg, animate) {
+        const container = document.getElementById('tabs');
+        const el = createTab(msg);
+        msg.el = el;
+        container.appendChild(el);
+        queue.push(msg);
+        if (animationsEnabled && animate) {
+          el.style.transform = 'translateY(-100vh)';
+          void el.offsetWidth;
+          el.style.transform = 'translateY(0)';
+        }
+      }
+
+      async function ensureQueue() {
+        if (poll) { clearTimeout(poll); poll = null; }
+        while (queue.length < MAX_VISIBLE) {
+          const m = await fetchMessage();
+          if (!m) break;
+          addTab(m, true);
+        }
+        if (queue.length === 0) poll = setTimeout(ensureQueue, 3000);
+      }
+
       async function sendLabel(label, minutes) {
-        if (!current) return;
-        const payload = { id: current.id, label };
+        if (!queue.length) return;
+        const item = queue.shift();
+        const payload = { id: item.id, label };
         if (minutes) payload.duration = minutes;
         await fetch('/label', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
-        const box = document.getElementById('box');
         const body = document.body;
         const dir = label === 'safe' ? 'right' : 'left';
         if (animationsEnabled) {
-          box.style.transform = `translateX(${dir === 'right' ? '100vw' : '-100vw'})`;
+          item.el.style.transform = `translateX(${dir === 'right' ? '100vw' : '-100vw'})`;
         }
         const flash = label === 'safe' ? 'flash-green' : (label === 'mute' || label === 'mute15' ? 'flash-blue' : 'flash-red');
         body.classList.add(flash);
@@ -272,28 +283,27 @@
           body.classList.remove('flash-red');
           body.classList.remove('flash-blue');
         }, 300);
-        current = null;
+        const finish = () => { item.el.remove(); ensureQueue(); };
         if (animationsEnabled) {
-          setTimeout(() => getNext(dir), 300);
+          setTimeout(finish, 300);
         } else {
-          box.style.transform = 'translateX(0)';
-          getNext(dir);
+          item.el.style.transform = 'translateX(0)';
+          finish();
         }
       }
 
       async function jumpToPresent() {
         const res = await fetch('/jump', { method: 'POST' });
+        const container = document.getElementById('tabs');
+        container.innerHTML = '';
+        queue = [];
         if (!res.ok) {
-          document.getElementById('content').textContent = 'No messages';
-          current = null;
+          ensureQueue();
           return;
         }
-        current = await res.json();
-        document.getElementById('content').textContent = current.content || '[no content]';
-        document.getElementById('username').textContent = current.username || '';
-        document.getElementById('displayName').textContent = current.displayName || '';
-        document.getElementById('roles').textContent = (current.roles && current.roles.length) ? current.roles.join(', ') : '';
-        document.getElementById('avatar').src = current.avatar || '';
+        const msg = await res.json();
+        addTab(msg, false);
+        ensureQueue();
       }
 
       document.getElementById('unsafeBtn').onclick = () => sendLabel('unsafe');
@@ -311,8 +321,8 @@
         if (e.key === 'ArrowUp') sendLabel('mute15', upDuration);
       });
       updateDurationUI();
-        applyAnimationSetting();
-      getNext();
+      applyAnimationSetting();
+      ensureQueue();
     </script>
 </body>
 </html>
