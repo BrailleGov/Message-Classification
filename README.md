@@ -8,15 +8,16 @@ This prototype collects Discord messages and lets you label them as `safe` or `u
    npm install
    ```
 2. Copy `config.example.json` to `config.json` and fill in your Discord bot token, channel ID and guild ID.
-3. Start the web server:
+3. Copy `whitelist.json.example` to `whitelist.json` and list the IP addresses allowed to access the site.
+4. Start the web server:
    ```bash
    npm run server
    ```
-4. In another terminal, run the Discord bot:
+5. In another terminal, run the Discord bot:
    ```bash
    npm run bot
    ```
-5. Open [http://localhost:3000](http://localhost:3000) to label messages using the arrow keys:
+6. Open [http://localhost:3000](http://localhost:3000) to label messages using the arrow keys:
    - Left arrow: mark unsafe and delete the message.
    - Right arrow: mark safe.
    - Down arrow: mute 5 minutes and delete the message.

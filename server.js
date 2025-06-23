@@ -6,9 +6,31 @@ const app = express();
 const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
 const { BOT_TOKEN, CHANNEL_ID, GUILD_ID } = config;
 
+const WHITELIST_FILE = path.join(__dirname, 'whitelist.json');
+let whitelistIPs = [];
+function loadWhitelist() {
+  try {
+    const raw = fs.readFileSync(WHITELIST_FILE, 'utf8');
+    const parsed = JSON.parse(raw);
+    whitelistIPs = Array.isArray(parsed) ? parsed : parsed.ips || [];
+  } catch (e) {
+    whitelistIPs = [];
+  }
+}
+loadWhitelist();
+
 const DATA_FILE = path.join(__dirname, 'data.json');
 
 app.use(express.json());
+app.use((req, res, next) => {
+  const forwarded = req.headers['x-forwarded-for'];
+  let ip = forwarded ? forwarded.split(',')[0].trim() : req.socket.remoteAddress || '';
+  ip = ip.replace(/^::ffff:/, '');
+  if (whitelistIPs.length && !whitelistIPs.includes(ip)) {
+    return res.status(403).send('Access denied');
+  }
+  next();
+});
 app.use(express.static(path.join(__dirname, 'public')));
 
 function loadData() {
