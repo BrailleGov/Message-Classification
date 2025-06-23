@@ -8,13 +8,16 @@ const { BOT_TOKEN, CHANNEL_ID, GUILD_ID } = config;
 
 const WHITELIST_FILE = path.join(__dirname, 'whitelist.json');
 let whitelistIPs = [];
+let whitelistLoaded = false;
 function loadWhitelist() {
   try {
     const raw = fs.readFileSync(WHITELIST_FILE, 'utf8');
     const parsed = JSON.parse(raw);
     whitelistIPs = Array.isArray(parsed) ? parsed : parsed.ips || [];
+    whitelistLoaded = true;
   } catch (e) {
     whitelistIPs = [];
+    whitelistLoaded = false;
   }
 }
 loadWhitelist();
@@ -26,8 +29,9 @@ app.use((req, res, next) => {
   const forwarded = req.headers['x-forwarded-for'];
   let ip = forwarded ? forwarded.split(',')[0].trim() : req.socket.remoteAddress || '';
   ip = ip.replace(/^::ffff:/, '');
-  if (whitelistIPs.length && !whitelistIPs.includes(ip)) {
-    return res.status(403).send('Access denied');
+  if (ip === '::1') ip = '127.0.0.1';
+  if (!whitelistLoaded || !whitelistIPs.includes(ip)) {
+    return res.status(403).send('You are not whitelisted');
   }
   next();
 });
