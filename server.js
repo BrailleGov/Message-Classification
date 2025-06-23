@@ -22,7 +22,11 @@ function loadData() {
       label: item.label,
       sourceId: item.sourceId,
       timestamp: item.timestamp,
-      authorId: item.authorId
+      authorId: item.authorId,
+      username: item.username,
+      displayName: item.displayName,
+      avatar: item.avatar,
+      roles: item.roles
     }));
   } catch (e) {
     return [];
@@ -35,7 +39,11 @@ function saveData(data) {
     label: item.label,
     sourceId: item.sourceId,
     timestamp: item.timestamp,
-    authorId: item.authorId
+    authorId: item.authorId,
+    username: item.username,
+    displayName: item.displayName,
+    avatar: item.avatar,
+    roles: item.roles
   }));
   fs.writeFileSync(DATA_FILE, JSON.stringify(stripped, null, 2));
 }
@@ -44,7 +52,7 @@ let queue = loadData();
 let nextId = queue.reduce((max, m) => Math.max(max, m.id), 0) + 1;
 
 app.post('/queue', (req, res) => {
-  const { id: sourceId, content, timestamp, authorId } = req.body || {};
+  const { id: sourceId, content, timestamp, authorId, username, displayName, avatar, roles } = req.body || {};
   if (!sourceId || !timestamp) {
     return res.status(400).json({ error: 'invalid payload' });
   }
@@ -56,7 +64,7 @@ app.post('/queue', (req, res) => {
   const existing = queue.find(m => m.label && m.content === content);
   if (existing) label = existing.label;
 
-  const item = { id: nextId++, sourceId, content, timestamp, authorId };
+  const item = { id: nextId++, sourceId, content, timestamp, authorId, username, displayName, avatar, roles };
   if (label) item.label = label;
   queue.push(item);
   try {
@@ -83,7 +91,14 @@ function getNextItem() {
 app.get('/next', (req, res) => {
   const item = getNextItem();
   if (!item) return res.status(404).end();
-  res.json({ id: item.id, content: item.content });
+  res.json({
+    id: item.id,
+    content: item.content,
+    username: item.username,
+    displayName: item.displayName,
+    avatar: item.avatar,
+    roles: item.roles
+  });
 });
 
 app.post('/jump', (req, res) => {
@@ -101,7 +116,14 @@ app.post('/jump', (req, res) => {
   } catch (e) {
     console.error('Failed to save data:', e);
   }
-  res.json({ id: last.id, content: last.content });
+  res.json({
+    id: last.id,
+    content: last.content,
+    username: last.username,
+    displayName: last.displayName,
+    avatar: last.avatar,
+    roles: last.roles
+  });
 });
 
 async function deleteMessage(id) {
