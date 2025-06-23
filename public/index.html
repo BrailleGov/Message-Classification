@@ -258,7 +258,7 @@
           if (!m) break;
           addTab(m, true);
         }
-        if (queue.length === 0) poll = setTimeout(ensureQueue, 3000);
+        poll = setTimeout(ensureQueue, 3000);
       }
 
       async function sendLabel(label, minutes) {
