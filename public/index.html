@@ -17,6 +17,7 @@
       transition: background-color 0.3s;
       position: relative;
     }
+    .no-anim *, .no-anim { transition: none !important; animation: none !important; }
 
     #box {
       border: 1px solid #444;
@@ -135,6 +136,7 @@
       <div id="settingsMenu">
         <div>Down Arrow: <span id="downValue"></span>m<br><input type="range" id="downSlider" min="5" max="30"></div>
         <div>Up Arrow: <span id="upValue"></span>m<br><input type="range" id="upSlider" min="5" max="30"></div>
+        <div><label><input type="checkbox" id="animToggle" checked> Enable Animations</label></div>
       </div>
     </div>
     <div id="helpContainer">
@@ -177,6 +179,12 @@
       let downDuration = parseInt(localStorage.getItem('downDuration')) || DEFAULT_DOWN;
       let upDuration = parseInt(localStorage.getItem('upDuration')) || DEFAULT_UP;
 
+        let animationsEnabled = localStorage.getItem("animationsEnabled");
+        animationsEnabled = animationsEnabled === null ? true : animationsEnabled === "true";
+        function applyAnimationSetting() {
+          document.getElementById("animToggle").checked = animationsEnabled;
+          document.body.classList.toggle("no-anim", !animationsEnabled);
+        }
       function updateDurationUI() {
         document.getElementById('downSlider').value = downDuration;
         document.getElementById('upSlider').value = upDuration;
@@ -199,6 +207,11 @@
         localStorage.setItem('upDuration', upDuration);
         updateDurationUI();
       });
+        document.getElementById("animToggle").addEventListener("change", (e) => {
+          animationsEnabled = e.target.checked;
+          localStorage.setItem("animationsEnabled", animationsEnabled);
+          applyAnimationSetting();
+        });
 
       document.getElementById('settingsBtn').onclick = () => {
         document.getElementById('settingsMenu').classList.toggle('show');
@@ -220,12 +233,12 @@
           }
           current = await res.json();
           const box = document.getElementById('box');
-          box.style.transition = 'none';
-          if (enterDir) {
-            box.style.transform = `translateX(${enterDir === 'right' ? '-100vw' : '100vw'})`;
-          }
-          void box.offsetWidth;
-          box.style.transition = 'transform 0.3s';
+            const anim = animationsEnabled;
+            box.style.transition = anim ? "transform 0.3s" : "none";
+            if (anim && enterDir) {
+              box.style.transform = `translateX(${enterDir === "right" ? "-100vw" : "100vw"})`;
+              void box.offsetWidth;
+            }
           document.getElementById('content').textContent = current.content || '[no content]';
           document.getElementById('username').textContent = current.username || '';
           document.getElementById('displayName').textContent = current.displayName || '';
@@ -249,7 +262,9 @@
         const box = document.getElementById('box');
         const body = document.body;
         const dir = label === 'safe' ? 'right' : 'left';
-        box.style.transform = `translateX(${dir === 'right' ? '100vw' : '-100vw'})`;
+        if (animationsEnabled) {
+          box.style.transform = `translateX(${dir === 'right' ? '100vw' : '-100vw'})`;
+        }
         const flash = label === 'safe' ? 'flash-green' : (label === 'mute' || label === 'mute15' ? 'flash-blue' : 'flash-red');
         body.classList.add(flash);
         setTimeout(() => {
@@ -258,7 +273,12 @@
           body.classList.remove('flash-blue');
         }, 300);
         current = null;
-        setTimeout(() => getNext(dir), 300);
+        if (animationsEnabled) {
+          setTimeout(() => getNext(dir), 300);
+        } else {
+          box.style.transform = 'translateX(0)';
+          getNext(dir);
+        }
       }
 
       async function jumpToPresent() {
@@ -291,6 +311,7 @@
         if (e.key === 'ArrowUp') sendLabel('mute15', upDuration);
       });
       updateDurationUI();
+        applyAnimationSetting();
       getNext();
     </script>
 </body>

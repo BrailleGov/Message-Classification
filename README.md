@@ -22,5 +22,6 @@ This prototype collects Discord messages and lets you label them as `safe` or `u
    - Down arrow: mute 5 minutes and delete the message.
    - Up arrow: mute 15 minutes and delete the message.
    - Use the "Jump to Present" button to skip to the latest message.
+   - The settings menu (gear icon) lets you adjust mute durations and toggle animations.
 
 Messages and labels are stored in `data.json`.
