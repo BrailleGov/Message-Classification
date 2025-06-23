@@ -46,7 +46,7 @@
         try {
           const res = await fetch('/next');
           if (!res.ok) {
-            document.getElementById('content').textContent = 'No more messages';
+            document.getElementById('content').textContent = 'Waiting for more messages...';
             current = null;
             poll = setTimeout(() => getNext(enterDir), 3000);
             return;

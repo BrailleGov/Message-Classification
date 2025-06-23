@@ -11,37 +11,61 @@ app.use(express.static(path.join(__dirname, 'public')));
 function loadData() {
   try {
     const raw = fs.readFileSync(DATA_FILE, 'utf8');
-    return JSON.parse(raw);
+    const data = JSON.parse(raw);
+    let id = 1;
+    return data.map(item => ({ id: id++, content: item.content, label: item.label }));
   } catch (e) {
     return [];
   }
 }
 
 function saveData(data) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+  const stripped = data.map(item => ({ content: item.content, label: item.label }));
+  fs.writeFileSync(DATA_FILE, JSON.stringify(stripped, null, 2));
 }
 
 let queue = loadData();
+let nextId = queue.reduce((max, m) => Math.max(max, m.id), 0) + 1;
 
 app.post('/queue', (req, res) => {
-  const { id, content, timestamp } = req.body || {};
-  if (!id || !timestamp) {
+  const { id: sourceId, content, timestamp } = req.body || {};
+  if (!sourceId || !timestamp) {
     return res.status(400).json({ error: 'invalid payload' });
   }
-  if (queue.find(m => m.id === id)) {
+  if (queue.find(m => m.sourceId === sourceId)) {
     return res.status(200).json({ status: 'duplicate' });
   }
-  queue.push({ id, content, timestamp });
+
+  let label;
+  const existing = queue.find(m => m.label && m.content === content);
+  if (existing) label = existing.label;
+
+  const item = { id: nextId++, sourceId, content, timestamp };
+  if (label) item.label = label;
+  queue.push(item);
   try {
     saveData(queue);
   } catch (e) {
     console.error('Failed to save data:', e);
   }
-  res.json({ status: 'queued' });
+  res.json({ status: label ? 'auto-labeled' : 'queued' });
 });
 
+function getNextItem() {
+  for (const item of queue) {
+    if (item.label) continue;
+    const dup = queue.find(m => m.label && m.content === item.content);
+    if (dup) {
+      item.label = dup.label;
+      continue;
+    }
+    return item;
+  }
+  return null;
+}
+
 app.get('/next', (req, res) => {
-  const item = queue.find(m => !m.label);
+  const item = getNextItem();
   if (!item) return res.status(404).end();
   res.json({ id: item.id, content: item.content });
 });
@@ -52,6 +76,9 @@ app.post('/label', (req, res) => {
   if (!item) return res.status(404).json({ error: 'not found' });
   if (item.label) return res.status(200).json({ status: 'already labeled' });
   item.label = label;
+  queue.forEach(m => {
+    if (m !== item && m.content === item.content) m.label = label;
+  });
   try {
     saveData(queue);
   } catch (e) {
