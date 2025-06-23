@@ -29,6 +29,7 @@
 
     .flash-green { background-color: #cfc; }
     .flash-red { background-color: #fcc; }
+    .flash-blue { background-color: #ccf; }
   </style>
 </head>
   <body>
@@ -36,6 +37,7 @@
     <div id="controls">
       <button id="unsafeBtn">Unsafe (←)</button>
       <button id="safeBtn">Safe (→)</button>
+      <button id="muteBtn">Mute 5m (↓)</button>
     </div>
     <script>
       let current = null;
@@ -77,10 +79,12 @@
         const body = document.body;
         const dir = label === 'safe' ? 'right' : 'left';
         box.style.transform = `translateX(${dir === 'right' ? '100vw' : '-100vw'})`;
-        body.classList.add(label === 'safe' ? 'flash-green' : 'flash-red');
+        const flash = label === 'safe' ? 'flash-green' : (label === 'mute' ? 'flash-blue' : 'flash-red');
+        body.classList.add(flash);
         setTimeout(() => {
           body.classList.remove('flash-green');
           body.classList.remove('flash-red');
+          body.classList.remove('flash-blue');
         }, 300);
         current = null;
         setTimeout(() => getNext(dir), 300);
@@ -88,9 +92,11 @@
 
       document.getElementById('unsafeBtn').onclick = () => sendLabel('unsafe');
       document.getElementById('safeBtn').onclick = () => sendLabel('safe');
+      document.getElementById('muteBtn').onclick = () => sendLabel('mute');
       document.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowLeft') sendLabel('unsafe');
         if (e.key === 'ArrowRight') sendLabel('safe');
+        if (e.key === 'ArrowDown') sendLabel('mute');
       });
       getNext();
     </script>

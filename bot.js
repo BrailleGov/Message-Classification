@@ -30,7 +30,8 @@ client.on('messageCreate', async (msg) => {
   const payload = {
     id: msg.id,
     content: msg.content,
-    timestamp: msg.createdAt.toISOString()
+    timestamp: msg.createdAt.toISOString(),
+    authorId: msg.author.id
   };
   await postQueue(payload);
 });
