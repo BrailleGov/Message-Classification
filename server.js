@@ -30,6 +30,7 @@ app.use((req, res, next) => {
   let ip = forwarded ? forwarded.split(',')[0].trim() : req.socket.remoteAddress || '';
   ip = ip.replace(/^::ffff:/, '');
   if (ip === '::1') ip = '127.0.0.1';
+  console.log('IP:', ip);
   if (!whitelistLoaded || !whitelistIPs.includes(ip)) {
     return res.status(403).send('You are not whitelisted');
   }

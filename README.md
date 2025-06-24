@@ -9,6 +9,8 @@ This prototype collects Discord messages and lets you label them as `safe` or `u
    ```
 2. Copy `config.example.json` to `config.json` and fill in your Discord bot token, channel ID and guild ID.
 3. Copy `whitelist.example.json` to `whitelist.json` and list the IP addresses allowed to access the site.
+   If requests are blocked, check the server console for lines starting with `IP:`
+   to see the address being checked and add it to the whitelist.
 4. Start the web server:
    ```bash
    npm run server
