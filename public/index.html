@@ -44,12 +44,19 @@
       margin-right: 10px;
     }
 
-    .tab .roles {
-      font-size: 0.7em;
-      color: #aaa;
-      white-space: normal;
-      word-break: break-word;
-    }
+      .tab .roles {
+        font-size: 0.7em;
+        color: #aaa;
+        white-space: normal;
+        word-break: break-word;
+      }
+
+      .msg-media {
+        max-width: 100%;
+        max-height: 200px;
+        margin-top: 5px;
+        display: block;
+      }
 
     #controls { position: fixed; bottom: 0; width: 100%; padding-bottom: 10px; background-color: #222; }
     #controls > div { margin-top: 5px; }
@@ -230,10 +237,31 @@
         }
       }
 
+      function escapeHtml(str) {
+        return str.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      }
+
+      function formatContent(text) {
+        if (!text) return '[no content]';
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        text = escapeHtml(text);
+        return text.replace(urlRegex, url => {
+          const lower = url.toLowerCase();
+          if (/\.(png|jpe?g|gif|webp)$/.test(lower)) {
+            return `<img src="${url}" class="msg-media">`;
+          }
+          if (/\.(mp4|webm|ogg)$/.test(lower)) {
+            return `<video src="${url}" class="msg-media" autoplay loop muted controls></video>`;
+          }
+          return `<a href="${url}" target="_blank">${url}</a>`;
+        });
+      }
+
       function createTab(msg) {
         const div = document.createElement('div');
         div.className = 'tab';
-        div.innerHTML = `<div class="author"><img src="${msg.avatar || ''}" alt="avatar"><div><div class="username">${msg.username || ''}</div><div class="displayName" style="font-size:0.9em;color:#bbb">${msg.displayName || ''}</div><div class="roles">${msg.roles && msg.roles.length ? msg.roles.join(', ') : ''}</div></div></div><div class="content">${msg.content || '[no content]'}</div>`;
+        const contentHtml = formatContent(msg.content);
+        div.innerHTML = `<div class="author"><img src="${msg.avatar || ''}" alt="avatar"><div><div class="username">${msg.username || ''}</div><div class="displayName" style="font-size:0.9em;color:#bbb">${msg.displayName || ''}</div><div class="roles">${msg.roles && msg.roles.length ? msg.roles.join(', ') : ''}</div></div></div><div class="content">${contentHtml}</div>`;
         div.style.transition = animationsEnabled ? 'transform 0.3s' : 'none';
         return div;
       }
