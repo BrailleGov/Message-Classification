@@ -247,10 +247,10 @@
         text = escapeHtml(text);
         return text.replace(urlRegex, url => {
           const lower = url.toLowerCase();
-          if (/\.(png|jpe?g|gif|webp)$/.test(lower)) {
+          if (/\.(png|jpe?g|gif|webp)(?:\?.*)?$/.test(lower)) {
             return `<img src="${url}" class="msg-media">`;
           }
-          if (/\.(mp4|webm|ogg)$/.test(lower)) {
+          if (/\.(mp4|webm|ogg)(?:\?.*)?$/.test(lower)) {
             return `<video src="${url}" class="msg-media" autoplay loop muted controls></video>`;
           }
           return `<a href="${url}" target="_blank">${url}</a>`;
