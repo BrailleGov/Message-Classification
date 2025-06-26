@@ -4,6 +4,18 @@
   <meta charset="UTF-8">
   <title>Message Labeler</title>
   <style>
+    :root {
+      --bg: #222;
+      --text: #eee;
+      --tab-bg: #333;
+      --border: #444;
+    }
+    body.light {
+      --bg: #eee;
+      --text: #222;
+      --tab-bg: #ddd;
+      --border: #ccc;
+    }
     body {
       font-family: Arial, sans-serif;
       margin: 0;
@@ -12,21 +24,21 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background-color: #222;
-      color: #eee;
-      transition: background-color 0.3s;
+      background-color: var(--bg);
+      color: var(--text);
+      transition: background-color 0.3s, color 0.3s;
       position: relative;
     }
     .no-anim *, .no-anim { transition: none !important; animation: none !important; }
 
     .tab {
-      border: 1px solid #444;
+      border: 1px solid var(--border);
       padding: 20px;
       border-radius: 8px;
       min-width: 300px;
       text-align: center;
       font-size: 1.5em;
-      background-color: #333;
+      background-color: var(--tab-bg);
       transition: transform 0.3s;
       margin-bottom: 10px;
     }
@@ -58,7 +70,7 @@
         display: block;
       }
 
-    #controls { position: fixed; bottom: 0; width: 100%; padding-bottom: 10px; background-color: #222; }
+    #controls { position: fixed; bottom: 0; width: 100%; padding-bottom: 10px; background-color: var(--bg); }
     #controls > div { margin-top: 5px; }
     #controls { display:flex; flex-direction:column; align-items:center; }
     #controls > div { display: flex; justify-content: center; }
@@ -75,17 +87,21 @@
     .flash-green { background-color: #264d26; }
     .flash-red { background-color: #4d2626; }
     .flash-blue { background-color: #26324d; }
+    body.light .flash-green { background-color: #bff0bf; }
+    body.light .flash-red { background-color: #f0bfbf; }
+    body.light .flash-blue { background-color: #bfd7f0; }
 
     #helpContainer {
       position: absolute;
       top: 10px;
       right: 10px;
+      z-index: 1000;
     }
 
     #helpBtn {
       background: transparent;
-      border: 1px solid #eee;
-      color: #eee;
+      border: 1px solid var(--text);
+      color: var(--text);
       border-radius: 50%;
       width: 28px;
       height: 28px;
@@ -100,8 +116,8 @@
       position: absolute;
       right: 0;
       top: 40px;
-      background-color: #333;
-      border: 1px solid #444;
+      background-color: var(--tab-bg);
+      border: 1px solid var(--border);
       padding: 10px;
       border-radius: 4px;
       width: 200px;
@@ -115,12 +131,13 @@
       position: absolute;
       top: 10px;
       left: 10px;
+      z-index: 1000;
     }
 
     #settingsBtn {
       background: transparent;
-      border: 1px solid #eee;
-      color: #eee;
+      border: 1px solid var(--text);
+      color: var(--text);
       border-radius: 50%;
       width: 28px;
       height: 28px;
@@ -135,8 +152,8 @@
       position: absolute;
       left: 0;
       top: 40px;
-      background-color: #333;
-      border: 1px solid #444;
+      background-color: var(--tab-bg);
+      border: 1px solid var(--border);
       padding: 10px;
       border-radius: 4px;
       width: 220px;
@@ -155,6 +172,7 @@
         <div>Down Arrow: <span id="downValue"></span>m<br><input type="range" id="downSlider" min="5" max="30"></div>
         <div>Up Arrow: <span id="upValue"></span>m<br><input type="range" id="upSlider" min="5" max="30"></div>
         <div><label><input type="checkbox" id="animToggle" checked> Enable Animations</label></div>
+        <div><label><input type="checkbox" id="lightToggle"> Light Mode</label></div>
       </div>
     </div>
     <div id="helpContainer">
@@ -165,6 +183,8 @@
         <div class="downHelp"><b>Mute 5m (↓)</b> - mute user for 5 minutes and delete the message</div>
         <div class="upHelp"><b>Mute 15m (↑)</b> - mute user for 15 minutes and delete the message</div>
         <div><b>Jump to Present</b> - skip to most recent message</div>
+        <div><b>Settings (⚙)</b> - adjust read times and toggle light mode</div>
+        <div><b>Help (?)</b> - show this menu</div>
       </div>
     </div>
     <div id="tabs"></div>
@@ -190,9 +210,14 @@
 
       let animationsEnabled = localStorage.getItem('animationsEnabled');
       animationsEnabled = animationsEnabled === null ? true : animationsEnabled === 'true';
+      let lightMode = localStorage.getItem('lightMode') === 'true';
       function applyAnimationSetting() {
         document.getElementById('animToggle').checked = animationsEnabled;
         document.body.classList.toggle('no-anim', !animationsEnabled);
+      }
+      function applyLightMode() {
+        document.body.classList.toggle('light', lightMode);
+        document.getElementById('lightToggle').checked = lightMode;
       }
       function updateDurationUI() {
         document.getElementById('downSlider').value = downDuration;
@@ -220,6 +245,11 @@
         animationsEnabled = e.target.checked;
         localStorage.setItem('animationsEnabled', animationsEnabled);
         applyAnimationSetting();
+      });
+      document.getElementById('lightToggle').addEventListener('change', (e) => {
+        lightMode = e.target.checked;
+        localStorage.setItem('lightMode', lightMode);
+        applyLightMode();
       });
 
       document.getElementById('settingsBtn').onclick = () => {
@@ -354,6 +384,7 @@
       });
       updateDurationUI();
       applyAnimationSetting();
+      applyLightMode();
       ensureQueue();
     </script>
 </body>
