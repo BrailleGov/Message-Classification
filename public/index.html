@@ -238,29 +238,33 @@
       }
 
       function escapeHtml(str) {
+        if (!str) return '';
         return str.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
       }
 
-      function formatContent(text) {
-        if (!text) return '[no content]';
+      function mediaTag(url) {
+        const lower = url.toLowerCase();
+        if (/\.(png|jpe?g|gif|webp)(?:\?.*)?$/.test(lower)) {
+          return `<img src="${url}" class="msg-media">`;
+        }
+        if (/\.(mp4|webm|ogg)(?:\?.*)?$/.test(lower)) {
+          return `<video src="${url}" class="msg-media" autoplay loop muted controls></video>`;
+        }
+        return `<a href="${url}" target="_blank">${url}</a>`;
+      }
+
+      function formatContent(text, attachments) {
         const urlRegex = /(https?:\/\/[^\s]+)/g;
-        text = escapeHtml(text);
-        return text.replace(urlRegex, url => {
-          const lower = url.toLowerCase();
-          if (/\.(png|jpe?g|gif|webp)(?:\?.*)?$/.test(lower)) {
-            return `<img src="${url}" class="msg-media">`;
-          }
-          if (/\.(mp4|webm|ogg)(?:\?.*)?$/.test(lower)) {
-            return `<video src="${url}" class="msg-media" autoplay loop muted controls></video>`;
-          }
-          return `<a href="${url}" target="_blank">${url}</a>`;
-        });
+        text = text ? escapeHtml(text) : '[no content]';
+        let html = text.replace(urlRegex, url => mediaTag(url));
+        (attachments || []).forEach(url => { html += mediaTag(url); });
+        return html;
       }
 
       function createTab(msg) {
         const div = document.createElement('div');
         div.className = 'tab';
-        const contentHtml = formatContent(msg.content);
+        const contentHtml = formatContent(msg.content, msg.attachments);
         div.innerHTML = `<div class="author"><img src="${msg.avatar || ''}" alt="avatar"><div><div class="username">${msg.username || ''}</div><div class="displayName" style="font-size:0.9em;color:#bbb">${msg.displayName || ''}</div><div class="roles">${msg.roles && msg.roles.length ? msg.roles.join(', ') : ''}</div></div></div><div class="content">${contentHtml}</div>`;
         div.style.transition = animationsEnabled ? 'transform 0.3s' : 'none';
         return div;
