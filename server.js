@@ -54,7 +54,8 @@ function loadData() {
       username: item.username,
       displayName: item.displayName,
       avatar: item.avatar,
-      roles: item.roles
+      roles: item.roles,
+      attachments: item.attachments || []
     }));
   } catch (e) {
     return [];
@@ -71,7 +72,8 @@ function saveData(data) {
     username: item.username,
     displayName: item.displayName,
     avatar: item.avatar,
-    roles: item.roles
+    roles: item.roles,
+    attachments: item.attachments || []
   }));
   fs.writeFileSync(DATA_FILE, JSON.stringify(stripped, null, 2));
 }
@@ -80,7 +82,7 @@ let queue = loadData();
 let nextId = queue.reduce((max, m) => Math.max(max, m.id), 0) + 1;
 
 app.post('/queue', (req, res) => {
-  const { id: sourceId, content, timestamp, authorId, username, displayName, avatar, roles } = req.body || {};
+  const { id: sourceId, content, timestamp, authorId, username, displayName, avatar, roles, attachments } = req.body || {};
   if (!sourceId || !timestamp) {
     return res.status(400).json({ error: 'invalid payload' });
   }
@@ -92,7 +94,7 @@ app.post('/queue', (req, res) => {
   const existing = queue.find(m => m.label && m.content === content);
   if (existing) label = existing.label;
 
-  const item = { id: nextId++, sourceId, content, timestamp, authorId, username, displayName, avatar, roles, displayed: false };
+  const item = { id: nextId++, sourceId, content, timestamp, authorId, username, displayName, avatar, roles, attachments: Array.isArray(attachments) ? attachments : [], displayed: false };
   if (label) item.label = label;
   queue.push(item);
   try {
@@ -123,6 +125,7 @@ app.get('/next', (req, res) => {
   res.json({
     id: item.id,
     content: item.content,
+    attachments: item.attachments,
     username: item.username,
     displayName: item.displayName,
     avatar: item.avatar,
@@ -149,6 +152,7 @@ app.post('/jump', (req, res) => {
   res.json({
     id: last.id,
     content: last.content,
+    attachments: last.attachments,
     username: last.username,
     displayName: last.displayName,
     avatar: last.avatar,

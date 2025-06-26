@@ -27,6 +27,7 @@ async function postQueue(payload, retries = 3) {
 client.on('messageCreate', async (msg) => {
   if (msg.channelId !== CHANNEL_ID) return;
   if (msg.author.bot) return;
+  const attachments = msg.attachments?.map(a => a.url) || [];
   const payload = {
     id: msg.id,
     content: msg.content,
@@ -35,7 +36,8 @@ client.on('messageCreate', async (msg) => {
     username: msg.author.username,
     displayName: msg.member ? msg.member.displayName : msg.author.username,
     avatar: msg.author.displayAvatarURL({ extension: 'png', size: 64 }),
-    roles: msg.member ? msg.member.roles.cache.filter(r => r.name !== '@everyone').map(r => r.name) : []
+    roles: msg.member ? msg.member.roles.cache.filter(r => r.name !== '@everyone').map(r => r.name) : [],
+    attachments
   };
   await postQueue(payload);
 });
