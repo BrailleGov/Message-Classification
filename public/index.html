@@ -44,6 +44,11 @@
       margin-right: 10px;
     }
 
+    .tab .content {
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
       .tab .roles {
         font-size: 0.7em;
         color: #aaa;
@@ -184,7 +189,7 @@
 
       const DEFAULT_DOWN = 5;
       const DEFAULT_UP = 15;
-      const MAX_VISIBLE = 6;
+      const MAX_VISIBLE = Infinity;
       let downDuration = parseInt(localStorage.getItem('downDuration')) || DEFAULT_DOWN;
       let upDuration = parseInt(localStorage.getItem('upDuration')) || DEFAULT_UP;
 
